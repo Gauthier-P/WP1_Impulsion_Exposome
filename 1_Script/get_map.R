@@ -3,6 +3,7 @@
 ########################
 
 rm(list=ls())
+graphics.off()
 
 library(questionr)
 library(sf)
@@ -14,10 +15,12 @@ library(gridtext)
 library(cowplot)
 library(gtable)
 library(grid)
+library(rmapshaper)
 library(gridExtra)
 library(ncdf4)
 library(readxl)
 library(terra)
+library(patchwork)
 library(COGugaison)
 
 
@@ -123,10 +126,10 @@ for(i in seq_along(liste.polluants)){
   )
 }
 
-ggsave("2_results/Map/map_NO2_2021.png", plots$MOY.NO2)
-ggsave("2_results/Map/map_O3_2021.png", plots$MOY.O3)
-ggsave("2_results/Map/map_PM25_2021.png", plots$MOY.PM25)
-ggsave("2_results/Map/map_PM10_2021.png", plots$MOY.PM10)
+ggsave("2_results/Map/map_NO2_2021.png", plots$MOY.NO2, width = 5,height = 5)
+ggsave("2_results/Map/map_O3_2021.png", plots$MOY.O3, width = 5,height = 5)
+ggsave("2_results/Map/map_PM25_2021.png", plots$MOY.PM25, width = 5,height = 5)
+ggsave("2_results/Map/map_PM10_2021.png", plots$MOY.PM10, width = 5,height = 5)
 
 titre <- richtext_grob(
   "**Moyenne annuelle des polluants atmosphériques par commune (2021)**<br>
@@ -136,8 +139,8 @@ titre <- richtext_grob(
 )
 
 source <- textGrob(
-  "Données : INERIS 2021 — Qualité de l’air France métropolitaine",
-  gp = gpar(fontface = 3, fontsize = 7, col="grey30"),
+  "Données : INERIS 2021",
+  gp = gpar(fontface = 3, fontsize = 5, col="grey30"),
   hjust = 1,
   x = 1
 )
@@ -157,9 +160,9 @@ map_combined <- arrangeGrob(
   source,
   ncol = 1,
   heights = unit.c(
-    unit(1.2, "cm"),   # hauteur titre
-    unit(1, "npc") - unit(2.2, "cm"),  # zone cartes
-    unit(1, "cm")      # hauteur source -> évite la coupe
+    unit(1.2, "cm"),  
+    unit(1, "npc") - unit(2.2, "cm"),  
+    unit(1, "cm")     
   )
 )
 
@@ -172,5 +175,153 @@ ggsave(
   bg = "#fbf9f4"
 )
 
-# ggsave("2_results/Map/map_combined.png", map_combined)
+map_combined <-
+  wrap_plots(
+    plots$MOY.NO2,
+    plots$MOY.O3,
+    plots$MOY.PM25,
+    plots$MOY.PM10,
+    ncol = 2,
+    nrow = 2
+  ) +
+  plot_annotation(
+    title = "Moyenne annuelle des polluants atmosphériques par commune (2021)",
+    subtitle = "COG 2024",
+    caption = "Données : INERIS 2021 - www.ineris.fr/fr/recherche-appui/risques-chroniques/mesure-prevision-qualite-air/qualite-air-france-metropolitaine",
+    theme = theme(
+      plot.background = element_rect(fill="#fbf9f4", color = NA),
+      plot.title = element_text(hjust = 0.5, face = "bold"),
+      plot.subtitle = element_text(hjust = 0.5, color = "grey40"),
+      plot.caption = element_text(hjust = 1, size = 6, color="grey30")
+    )
+  ) &
+  theme(legend.position = "bottom")
 
+
+#
+ggsave("2_results/Map/map_combined.png", map_combined, width = 10,height = 10)
+################################################################################
+
+map_Edu_L_2021 <- ggplot(map_data_2024) +
+  geom_sf(aes(fill = Low_edu_prop), color = NA) +
+ coord_sf(
+   expand = FALSE) + 
+  scale_fill_viridis_c(
+    option = "turbo",
+    na.value = "grey90",
+    name ="**Proportion d'individus avec un niveau faible d'éducation**<br><span style='color:grey'>%</span>",
+    guide = guide_colorbar(
+      title.position = "top",   
+      title.hjust = 0,  
+      label.theme = element_text(size = 6), 
+      direction = "horizontal",
+      title.theme = element_markdown(size = 8))
+  ) +
+  labs(title= "Niveau faible d'éducation<br><span style='color:grey; font-size:7pt;'>(Sans diplôme, CAP, BEPC, Brevet ou DNB)</span>")+
+  theme_void()+
+  theme(
+    plot.background = element_rect(fill="#fbf9f4",color=NA),
+    legend.position = "bottom",
+    legend.text = element_text(),
+    legend.key.height = unit(0.15, "cm"),
+    legend.key.width  = unit(0.8, "cm"),
+    
+    plot.title = element_markdown(hjust=0.5, face="bold"),
+    plot.subtitle = element_text(hjust=0.5,color="grey40"),
+    plot.caption = element_markdown(color="grey20",hjust=0.5)
+  )
+
+
+ggsave("2_results/Map/map_edu_L_2021.png", map_Edu_L_2021, width = 5,height = 5)
+
+map_Edu_M_2021 <- ggplot(map_data_2024) +
+  geom_sf(aes(fill = Medium_edu_prop), color = NA) +
+  coord_sf(
+    expand = FALSE) +
+  scale_fill_viridis_c(
+    option = "turbo",
+    na.value = "grey90",
+    name ="**Proportion d'individus avec un niveau moyen d'éducation**<br><span style='color:grey'>%</span>",
+    guide = guide_colorbar(
+      title.position = "top",   
+      title.hjust = 0,  
+      label.theme = element_text(size = 6), 
+      direction = "horizontal",
+      title.theme = element_markdown(size = 8))
+  ) +
+  labs(title= "Niveau moyen d'éducation<br><span style='color:grey; font-size:7pt;'>(CAP, BEP, BAC)</span>")+
+  theme_void()+
+  theme(
+    plot.background = element_rect(fill="#fbf9f4",color=NA),
+    
+    legend.position = "bottom",
+    legend.text = element_text(),
+    legend.key.height = unit(0.15, "cm"),
+    legend.key.width  = unit(0.8, "cm"),
+    
+    plot.title = element_markdown(hjust=0.5, face="bold"),
+    plot.subtitle = element_text(hjust=0.5,color="grey40"),
+    plot.caption = element_markdown(color="grey20",hjust=0.5)
+  )
+
+
+ggsave("2_results/Map/map_edu_M_2021.png", map_Edu_M_2021, width = 5,height = 5)
+
+
+map_Edu_H_2021 <- ggplot(map_data_2024) +
+  geom_sf(aes(fill =High_edu_prop), color = NA) +
+  coord_sf(
+    expand = FALSE) +
+  scale_fill_viridis_c(
+    option = "turbo",
+    na.value = "grey90",
+    name ="**Proportion d'individus avec un niveau haut d'éducation**<br><span style='color:grey'>%</span>",
+    guide = guide_colorbar(
+      title.position = "top",   
+      title.hjust = 0,  
+      label.theme = element_text(size = 6), 
+      direction = "horizontal",
+      title.theme = element_markdown(size = 8))
+  ) +
+  labs(title= "Niveau haut d'éducation<br><span style='color:grey; font-size:7pt;'>(>BAC+2)</span>")+
+  theme_void()+
+  theme(
+    plot.background = element_rect(fill="#fbf9f4",color=NA),
+    
+    legend.position = "bottom",
+    legend.text = element_text(),
+    legend.key.height = unit(0.15, "cm"),
+    legend.key.width  = unit(0.8, "cm"),
+    
+    plot.title = element_markdown(hjust=0.5, face="bold"),
+    plot.subtitle = element_text(hjust=0.5,color="grey40"),
+    plot.caption = element_markdown(color="grey20",hjust=0.5)
+  )
+
+
+ggsave("2_results/Map/map_edu_H_2021.png", map_Edu_H_2021, width = 5,height = 5)
+
+map_combined <-
+  (map_Edu_L_2021 | map_Edu_M_2021 | map_Edu_H_2021) +
+  plot_annotation(
+    title = "Education par commune (2021)",
+    subtitle = "Proportion d'individus par niveau d'éducation",
+    caption = "Données : INSEE 2021",
+    theme = theme(
+      plot.background = element_rect(fill="#fbf9f4", color = NA),
+      plot.title = element_text(hjust = 0.5, face = "bold"),
+      plot.subtitle = element_text(hjust = 0.5, color = "grey40"),
+      plot.caption = element_text(hjust = 1, size = 6, color="grey30")
+    )
+  ) &
+  theme(legend.position = "bottom")
+
+ggsave(
+  "2_results/Map/map_combined_edu.png",
+  map_combined,
+  width = 10,
+  height = 5,
+  bg = "#fbf9f4"
+)
+
+################################################################################
