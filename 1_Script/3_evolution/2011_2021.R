@@ -15,6 +15,7 @@ library(openxlsx)
 rm(list=ls())
 graphics.off()
 
+#julie:coucou
 ###---Données---###
 
 map_data_2021 <- readRDS("0_input/map_data_COG2024_C_2021_biv_seuil.rds")
